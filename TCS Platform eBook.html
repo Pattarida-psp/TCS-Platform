@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TCS Platform eBook — PRECISE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Thai:wght@500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0B1F3A;
+    --navy2:#12294A;
+    --teal:#0EA5A5;
+    --orange:#F2994A;
+    --paper:#FBF8F3;
+    --paper-edge:#EFE8DB;
+    --text:#1E2A3A;
+    --muted:#64748B;
+    --invest:#1B7A6B;
+    --line:#E4DFD3;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:'Sarabun',sans-serif;
+    background:var(--navy);
+    color:var(--text);
+    overflow:hidden;
+  }
+  .app{ display:flex; height:100vh; width:100vw; }
+
+  /* ---------------- SIDEBAR ---------------- */
+  .sidebar{
+    width:300px; min-width:300px;
+    background:linear-gradient(180deg,var(--navy) 0%, var(--navy2) 100%);
+    color:#fff;
+    display:flex; flex-direction:column;
+    padding:28px 22px;
+    overflow-y:auto;
+  }
+  .brand-dots{ display:flex; gap:8px; margin-bottom:14px; }
+  .brand-dots span{ width:9px; height:9px; border-radius:50%; display:inline-block; }
+  .brand-dots span:nth-child(1){background:#3B82C4;}
+  .brand-dots span:nth-child(2){background:#2FA36B;}
+  .brand-dots span:nth-child(3){background:#E8A33D;}
+  .brand-eyebrow{ font-size:11px; letter-spacing:2px; color:#9FB3D1; margin-bottom:4px; }
+  .brand-title{ font-family:'Noto Serif Thai',serif; font-size:22px; font-weight:700; color:#fff; margin:0 0 2px 0; }
+  .brand-sub{ font-size:12.5px; color:var(--teal); margin-bottom:24px; }
+
+  nav.toc{ flex:1; }
+  .toc-chapter{ margin-bottom:6px; }
+  .toc-chapter-label{
+    display:flex; align-items:center; gap:10px;
+    padding:9px 10px; border-radius:8px; cursor:pointer;
+    font-size:13.5px; color:#CFE0F5;
+    transition:background .15s ease, color .15s ease;
+  }
+  .toc-chapter-label:hover{ background:rgba(255,255,255,0.06); color:#fff; }
+  .toc-chapter-label .num{
+    font-family:'Noto Serif Thai',serif; font-weight:700; font-size:13px;
+    width:20px; flex-shrink:0; color:#7C93B5;
+  }
+  .toc-chapter-label.active{ background:rgba(14,165,165,0.16); color:#fff; }
+  .toc-chapter-label.active .num{ color:var(--teal); }
+  .toc-sub{ padding-left:34px; display:none; }
+  .toc-chapter.open .toc-sub{ display:block; }
+  .toc-sub-item{
+    padding:6px 8px; font-size:12px; color:#8FA5C4; cursor:pointer; border-radius:6px;
+    line-height:1.4;
+  }
+  .toc-sub-item:hover{ color:#fff; background:rgba(255,255,255,0.05); }
+  .toc-sub-item.active{ color:var(--teal); font-weight:600; }
+
+  .sidebar-footer{ font-size:10.5px; color:#5A719A; padding-top:16px; border-top:1px solid rgba(255,255,255,0.08); margin-top:10px; }
+
+  /* ---------------- BOOK / MAIN AREA ---------------- */
+  .book{
+    flex:1; position:relative;
+    display:flex; align-items:center; justify-content:center;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.05), transparent 60%),
+      var(--navy);
+    padding:36px;
+  }
+  .page-wrap{
+    position:relative;
+    width:min(880px, 100%);
+    height:100%;
+    max-height:820px;
+    perspective:2400px;
+  }
+  .page-shadow-stack{
+    position:absolute; inset:6px -10px -10px 10px;
+    background:#00040c;
+    border-radius:6px;
+    filter:blur(2px);
+    opacity:.35;
+  }
+  .page{
+    position:relative;
+    height:100%;
+    background:var(--paper);
+    border-radius:6px;
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,0.55), 0 2px 0 rgba(255,255,255,0.4) inset;
+    padding:56px 64px 40px 64px;
+    overflow-y:auto;
+    transform-origin:left center;
+    transition:transform .38s cubic-bezier(.4,.1,.2,1), opacity .32s ease;
+  }
+  .page::-webkit-scrollbar{ width:8px; }
+  .page::-webkit-scrollbar-thumb{ background:var(--paper-edge); border-radius:8px; }
+  .page.leaving-next{ transform:rotateY(-14deg) translateX(-30px); opacity:0; }
+  .page.leaving-prev{ transform:rotateY(14deg) translateX(30px); opacity:0; }
+  .page.entering{ transform:rotateY(0deg) translateX(0); opacity:1; }
+
+  .page-curl{
+    position:absolute; right:0; top:0; bottom:0; width:26px;
+    background:linear-gradient(90deg, transparent, rgba(0,0,0,0.05));
+    pointer-events:none;
+  }
+
+  .kicker{ font-size:11.5px; letter-spacing:2px; font-weight:700; color:var(--teal); margin-bottom:10px; }
+  h1.page-title{ font-family:'Noto Serif Thai',serif; font-size:30px; font-weight:700; color:var(--navy); margin:0 0 6px 0; line-height:1.25; }
+  .page-lead{ font-size:14px; font-style:italic; color:var(--muted); margin-bottom:26px; }
+  h2.sec{ font-family:'Noto Serif Thai',serif; font-size:20px; font-weight:600; color:var(--teal); margin:28px 0 10px 0; }
+  h3.sub{ font-family:'Noto Serif Thai',serif; font-size:16.5px; font-weight:600; color:var(--orange); margin:20px 0 6px 0; }
+  p{ font-size:14.5px; line-height:1.75; margin:0 0 12px 0; }
+  ul.plain{ margin:0 0 14px 0; padding-left:22px; }
+  ul.plain li{ font-size:14.5px; line-height:1.7; margin-bottom:6px; }
+  .muted-italic{ color:var(--muted); font-style:italic; font-size:13px; margin-bottom:14px; }
+
+  .card{
+    background:#F3F1EA;
+    border-radius:8px;
+    padding:14px 18px;
+    margin-bottom:14px;
+  }
+  .card-title{ font-weight:700; color:var(--navy); font-size:15px; margin-bottom:8px; }
+  .card-line{ font-size:13.3px; line-height:1.65; margin-bottom:5px; }
+  .card-line b{ color:var(--navy); }
+  .card-line.invest b{ color:var(--invest); }
+  .card-line.revenue b{ color:var(--orange); }
+
+  .chip-row{ display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 20px 0; }
+  .chip{ border:1px solid var(--teal); color:var(--navy); border-radius:16px; padding:5px 12px; font-size:11.5px; background:#EAF7F5; }
+  .chip.orange{ border-color:var(--orange); background:#FCEEE1; }
+
+  .cover-page{ display:flex; flex-direction:column; justify-content:center; height:100%; }
+  .cover-page .brand-eyebrow{ color:var(--muted); }
+  .cover-page h1{ font-family:'Noto Serif Thai',serif; font-size:44px; color:var(--navy); margin:6px 0 4px 0; }
+  .cover-page .subtitle{ font-family:'Noto Serif Thai',serif; font-size:22px; color:var(--teal); font-weight:600; margin-bottom:22px; }
+  .cover-rule{ width:120px; height:3px; background:var(--teal); margin-bottom:22px; }
+  .cover-desc{ font-size:15px; line-height:1.8; max-width:520px; color:var(--text); margin-bottom:30px; }
+  .cover-footer{ font-size:12.5px; color:var(--muted); font-style:italic; }
+
+  .toc-page-list{ columns:1; }
+  .toc-page-item{ display:flex; justify-content:space-between; align-items:baseline; padding:10px 0; border-bottom:1px dotted var(--line); cursor:pointer; }
+  .toc-page-item:hover .toc-page-item-title{ color:var(--teal); }
+  .toc-page-item-title{ font-size:15px; color:var(--navy); font-weight:600; transition:color .15s; }
+  .toc-page-item-num{ font-size:12px; color:var(--muted); }
+
+  /* nav buttons */
+  .nav-btn{
+    position:absolute; top:50%; transform:translateY(-50%);
+    width:46px; height:46px; border-radius:50%;
+    border:none; background:rgba(255,255,255,0.08); color:#fff;
+    font-size:20px; cursor:pointer; z-index:5;
+    display:flex; align-items:center; justify-content:center;
+    transition:background .15s ease, opacity .15s ease;
+  }
+  .nav-btn:hover{ background:rgba(255,255,255,0.18); }
+  .nav-btn:disabled{ opacity:0.25; cursor:default; }
+  .nav-btn.prev{ left:-8px; }
+  .nav-btn.next{ right:-8px; }
+  .book{ position:relative; }
+
+  .page-footer-bar{
+    position:absolute; bottom:10px; left:0; right:0;
+    display:flex; justify-content:center; align-items:center; gap:14px;
+    font-size:11.5px; color:#8FA5C4;
+  }
+
+  @media (max-width: 860px){
+    .sidebar{ width:76px; min-width:76px; padding:20px 8px; }
+    .brand-title,.brand-sub,.brand-eyebrow,.toc-chapter-label span:not(.num),.sidebar-footer{ display:none; }
+    .toc-sub{ display:none !important; }
+    .page{ padding:38px 26px 30px 26px; }
+    .nav-btn.prev{ left:4px; } .nav-btn.next{ right:4px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand-dots"><span></span><span></span><span></span></div>
+    <div class="brand-eyebrow">PRECISE</div>
+    <div class="brand-title">TCS Platform</div>
+    <div class="brand-sub">eBook · คู่มือทีมพัฒนา</div>
+    <nav class="toc" id="toc"></nav>
+    <div class="sidebar-footer">อ่านต่อได้ทุกที่ · คลิกหัวข้อเพื่อข้ามไปหน้านั้น</div>
+  </aside>
+  <main class="book">
+    <button class="nav-btn prev" id="prevBtn" aria-label="ก่อนหน้า">‹</button>
+    <div class="page-wrap">
+      <div class="page-shadow-stack"></div>
+      <div class="page" id="pageEl"></div>
+    </div>
+    <button class="nav-btn next" id="nextBtn" aria-label="ถัดไป">›</button>
+    <div class="page-footer-bar"><span id="pageNumLabel"></span></div>
+  </main>
+</div>
+
+<script>
+/* ---------------- helper builders ---------------- */
+function subsystem(name, fn, mission, invest, cust, rev){
+  let html = `<div class="card"><div class="card-title">${name}</div>`;
+  if(fn) html += `<div class="card-line"><b>Function —</b> ${fn}</div>`;
+  if(mission) html += `<div class="card-line"><b>Mission —</b> ${mission}</div>`;
+  if(invest) html += `<div class="card-line invest"><b>มุมนักลงทุน —</b> ${invest}</div>`;
+  if(cust) html += `<div class="card-line invest"><b>มุมลูกค้า —</b> ${cust}</div>`;
+  if(rev) html += `<div class="card-line revenue"><b>Revenue —</b> ${rev}</div>`;
+  html += `</div>`;
+  return html;
+}
+function chips(list, orange){
+  return `<div class="chip-row">` + list.map(c=>`<span class="chip${orange?' orange':''}">${c}</span>`).join('') + `</div>`;
+}
+
+/* ---------------- PAGE DATA ---------------- */
+const pages = [];
+
+// 0. COVER
+pages.push({
+  chapter: "", title: "Cover", tocSkip:true,
+  html: `
+    <div class="cover-page">
+      <div class="brand-dots"><span></span><span></span><span></span></div>
+      <div class="brand-eyebrow" style="letter-spacing:3px;font-size:12px;margin-top:10px;">PRECISE</div>
+      <h1>TCS PLATFORM</h1>
+      <div class="subtitle">eBook — คู่มืออ้างอิงสำหรับทีมพัฒนา</div>
+      <div class="cover-rule"></div>
+      <div class="cover-desc">รวม Mission, สถาปัตยกรรม, Function, มุมนักลงทุน, มุมลูกค้า และ Revenue Model ของทุก Sub-system ใน TCS Platform ฉบับสมบูรณ์ — จัดทำขึ้นเพื่อให้ทีมพัฒนาทุกคนเห็นภาพ Mission เดียวกัน ก่อนเริ่มออกแบบและพัฒนาโซลูชัน</div>
+      <div class="cover-footer">Reference Manual for Development Team · Internal Use</div>
+    </div>`
+});
+
+// 1. TOC (built after pages array is finalized, placeholder for now)
+pages.push({ chapter:"", title:"สารบัญ", tocSkip:true, isToc:true, html:"" });
+
+// 2. Chapter 1 - Mission
+pages.push({
+  chapter:"1", title:"Mission & กรอบกลยุทธ์", nav:"1. Mission & กรอบกลยุทธ์",
+  html:`
+    <div class="kicker">CHAPTER 1</div>
+    <h1 class="page-title">Mission & กรอบกลยุทธ์</h1>
+    <div class="page-lead">End – Way – Means Framework</div>
+
+    <h2 class="sec">1.1 End — เป้าหมายปลายทาง</h2>
+    <p>เพิ่มประสิทธิภาพการใช้ทรัพยากรสูงสุด เพื่อสร้างรายได้ต่อเนื่องทุกวัน (Recurring Revenue) จากฐานลูกค้าและสินทรัพย์ที่มีอยู่</p>
+
+    <h2 class="sec">1.2 Way — แนวทางการเปลี่ยนผ่าน</h2>
+    <p><b>Transform จาก Industrial Capitalism → Platform Capitalization</b></p>
+    <p>จากเดิมที่ขายสินค้าหรืออุปกรณ์เพียงครั้งเดียวแล้วจบความสัมพันธ์กับลูกค้า เปลี่ยนเป็นการสร้างแพลตฟอร์มดิจิทัลที่สร้างมูลค่าและรายได้ต่อเนื่องตลอดอายุการใช้งานของทรัพย์สิน</p>
+
+    <h2 class="sec">1.3 Means — เครื่องมือขับเคลื่อน</h2>
+    <p>Technology Platform + Commercial & Management Technology Platform ใช้สินค้าเดิมของ 5 Business Pillars ผูกกับชั้น Digital / AI / EMS และเปลี่ยน Revenue Model จากการขายอุปกรณ์แบบ One-time Sale เดิม เป็นโมเดลรายได้แบบ Recurring ได้แก่:</p>
+    <ul class="plain">
+      <li>Subscription (เช่น Digital Engineering Subscription, AI Subscription)</li>
+      <li>Shared Savings</li>
+      <li>Service Retainer</li>
+      <li>Marketplace Commission</li>
+      <li>Transaction Fee</li>
+    </ul>
+  `
+});
+
+// 3. Chapter 2 - Platform Overview
+pages.push({
+  chapter:"2", title:"ภาพรวมใหญ่ของ TCS Platform", nav:"2. ภาพรวมใหญ่ของ TCS Platform",
+  html:`
+    <div class="kicker">CHAPTER 2</div>
+    <h1 class="page-title">ภาพรวมใหญ่ของ TCS Platform</h1>
+    <div class="page-lead">5 Business Pillars เดิม ผนวกเข้ากับ 2 Digital Platform ใหม่</div>
+
+    <h2 class="sec">2.1 รากฐาน — 5 Business Pillars</h2>
+    <ul class="plain">
+      <li>01 · Power Distribution & Transmission</li>
+      <li>02 · High-Quality Power System</li>
+      <li>03 · Power Quality</li>
+      <li>04 · Energy Conservation</li>
+      <li>05 · Renewable Energy</li>
+    </ul>
+    <p>ทั้ง 5 Pillar คือฐานสินค้าและบริการเดิมของ PRECISE/TCS ที่ TCS Platform ถูกสร้างขึ้นอยู่บนฐานนี้ ผ่าน Energy Management System (EMS) ที่ทำหน้าที่ Monitor · Analyze · Optimize · Predict · Reduce Cost ให้ทั้ง 5 Pillar ทำงานร่วมกันเป็นระบบเดียว</p>
+
+    <h2 class="sec">2.2 สอง Platform หลัก</h2>
+    <h3 class="sub">Technology Platform</h3>
+    ${chips(["Energy Saving","Power Guarantee","Zero Downtime","Long Assurance","Carbon Reduction"])}
+    <ul class="plain">
+      <li>Digital Engineering Platform</li>
+      <li>Energy Intelligence Platform (EMS)</li>
+      <li>Foundation: Cloud/SaaS, Cyber Security, Embedded AI</li>
+    </ul>
+    <h3 class="sub">Commercial & Management Technology Platform</h3>
+    ${chips(["Customer Engagement","Recurring Revenue","Ecosystem Collaboration","Business Value Creation"], true)}
+    <ul class="plain">
+      <li>A) Foundation</li>
+      <li>B) Ecosystem & Partner</li>
+      <li>C) Customer-Facing Platform</li>
+      <li>D) Commercial Process (Pre-Sale → Sale)</li>
+      <li>E) Post-Sale Value & Recurring Revenue</li>
+    </ul>
+  `
+});
+
+// 4. Chapter 3.1
+pages.push({
+  chapter:"3", title:"Digital Engineering Platform", nav:"3.1 Digital Engineering Platform", parentLabel:"3. Technology Platform",
+  html:`
+    <div class="kicker">CHAPTER 3 · TECHNOLOGY PLATFORM</div>
+    <h1 class="page-title">3.1 Digital Engineering Platform</h1>
+    <div class="muted-italic">"ห้องเขียนแบบพิมพ์เขียว ก่อนลงมือสร้างจริง"</div>
+    ${subsystem("Systems Modeling & Requirements","\"จดความต้องการ\" ของลูกค้าไว้ทั้งหมด","ไม่ให้ความต้องการตกหล่นตั้งแต่ก้าวแรก","ลด rework/claim ช่วงกลางโครงการ","มั่นใจว่า scope ตรงความต้องการจริง","Digital Engineering Subscription")}
+    ${subsystem("Architecture Design","\"แตกเป็นชิ้นงาน\" จากโจทย์","แปลงความต้องการเป็นแผนที่ลงมือทำได้จริง","จุดขาย engineering fee/services",null,null)}
+    ${subsystem("Simulation & Virtual Validation","\"ทดลองในคอมพิวเตอร์\"","พิสูจน์ความถูกต้องก่อนลงทุนจริง","ลด cost of failure ที่ต้องรับผิดชอบหลังส่งมอบ","ลดความเสี่ยง error หน้างานจริง",null)}
+    ${subsystem("Integration","เชื่อมต่อระบบ 3 ฟังก์ชันด้านบนเข้าด้วยกันให้เป็นระบบนิเวศข้อมูลเดียว เพื่อให้ทุกทีม (ไฟฟ้า เครื่องกล ซอฟต์แวร์ การผลิต) มองเห็นข้อมูลชุดเดียวกัน ไม่ต้องแยกไฟล์ต่างคนต่างเก็บ","เชื่อมโยงระบบเข้าด้วยกันให้เป็นระบบนิเวศข้อมูลเดียวที่ตรวจสอบย้อนกลับได้ เพื่อให้เกิดความร่วมมือข้ามสาขาวิชา การบริหารการเปลี่ยนแปลงที่แข็งแรง และการควบคุมการตั้งค่าตลอดวงจรการพัฒนาผลิตภัณฑ์ทั้งหมด","ต้นทุนงานถัดไปถูกลงเพราะมี \"คลังสูตร\" สะสม","งานเร็วขึ้นเพราะไม่ต้องเริ่มออกแบบใหม่ทุกครั้ง",null)}
+    ${subsystem("Digital Twin & Digital Thread","สร้างแบบจำลองเสมือนของสินค้าที่จำลองผลิตภัณฑ์จริงในคอมพิวเตอร์ พร้อมกับเส้นทางข้อมูลต่อเนื่องที่ร้อยเรียงข้อมูลตั้งแต่ขั้นออกแบบ ไปจนถึงการผลิตและใช้งานจริง โดยไม่ให้ข้อมูลขาดตอนระหว่างแผนก","สร้างดิจิทัลทวินและดิจิทัลเทรดที่เชื่อมโยงข้อมูลข้ามทุกสาขาวิชาและทุกช่วงของวงจรชีวิตผลิตภัณฑ์ เพื่อให้ทุกทีมเข้าถึงข้อมูลจากแหล่งเดียวกัน เข้าใจผลิตภัณฑ์ได้ลึกขึ้น ลดความเสี่ยง และเร่งการสร้างนวัตกรรม","ฐานข้อมูล asset ที่ใช้ต่อยอดขาย service ระยะยาวได้","ตรวจสอบย้อนกลับได้ทุกจุดของระบบ",null)}
+    ${subsystem("Functional Safety & Compliance Traceability","เก็บบันทึกทุกขั้นตอนออกแบบ ตรวจสอบความปลอดภัยตามมาตรฐาน","รับประกันมาตรฐานความปลอดภัยทุกขั้นตอน","ลดความเสี่ยงด้านกฎหมาย/มาตรฐานที่กระทบชื่อเสียงองค์กร","มั่นใจว่าระบบผ่านมาตรฐาน ไม่ต้องกังวลเรื่อง compliance",null)}
+    ${subsystem("Standards & Compliance Repository","เก็บบันทึกมาตรฐาน/สเปกที่เคยใช้ออกแบบไว้ทั้งหมดในทุกโครงการที่ผ่านมา เป็นฐานข้อมูลกลางเดียว","เมื่อมี Requirement ใหม่เข้ามา สามารถดึงมาตรฐาน/สเปกเดิมมาตรวจสอบเทียบเคียงได้ทันที ไม่ต้องออกแบบใหม่จากศูนย์","ลดความเสี่ยงถูกท้วงเรื่องมาตรฐาน/สเปกไม่ตรงย้อนหลัง","มั่นใจว่าสเปกที่เสนอสอดคล้องกับมาตรฐาน IEC/มอก.",null)}
+    ${subsystem("BOQ Standardization Engine","ฐานข้อมูล BOQ กลาง standardize รายการวัสดุ-ราคาทั้งองค์กร","แปลงการถอด BOQ จากทักษะรายบุคคลเป็นระบบที่ทำซ้ำได้","ลดเวลาทำ Proposal/BOQ ต่อดีล ทำให้ทีมขายรับงานได้มากขึ้นต่อคน","ได้ใบเสนอราคาที่แม่นยำ สอดคล้องกับราคาตลาดจริง ไม่ต้องรอนาน",null)}
+  `
+});
+
+// 5. Chapter 3.2
+pages.push({
+  chapter:"3", title:"Energy Intelligence Platform (EMS)", nav:"3.2 Energy Intelligence Platform (EMS)", parentLabel:"3. Technology Platform",
+  html:`
+    <div class="kicker">CHAPTER 3 · TECHNOLOGY PLATFORM</div>
+    <h1 class="page-title">3.2 Energy Intelligence Platform (EMS)</h1>
+    <div class="muted-italic">"สมองกลอัจฉริยะ" ควบคุม-ตัดสินใจพลังงานแบบเรียลไทม์ ที่ดูแลตลอดอายุการใช้งาน</div>
+    ${subsystem("AI Engineering Copilot","ผู้ช่วยออกแบบด้านพลังงาน","ช่วยตัดสินใจเรื่องพลังงานเร็ว-แม่นขึ้นด้วย AI","ขาย AI เป็น tier แยกต่างหาก มาร์จิ้นสูง","ได้ผู้ช่วยอัจฉริยะแนะนำโดยไม่ต้องรอผู้เชี่ยวชาญ","AI Subscription")}
+    ${subsystem("IoT Data Management","เก็บ-จัดระเบียบข้อมูล เพื่อคิดค่าไฟ/วิเคราะห์พฤติกรรม","แปลงข้อมูลดิบเป็นข้อมูลที่ใช้ตัดสินใจได้","ข้อมูลสะสมกลายเป็น asset ต่อยอด analytics ในอนาคต","รู้ต้นทุนพลังงานที่แท้จริงรายจุด",null)}
+    ${subsystem("Connectivity & Edge Management","ดูแลเซ็นเซอร์/มิเตอร์/กล้อง ว่ายังเชื่อมต่อและส่งข้อมูลปกติ","รักษาความต่อเนื่องของการเชื่อมต่อ ไม่ให้มีจุดบอด","ขายเป็น NOC monitoring service ต่อเนื่อง","มั่นใจว่าไม่มีข้อมูลขาดหาย",null)}
+    ${subsystem("Grid Edge / Field Devices","ตัดสินใจเรื่องเล็กได้เองหน้างาน ไม่ต้องรอศูนย์กลาง","ให้หน้างานตอบสนองได้ทันทีแม้สื่อสารล่ม","ขายฮาร์ดแวร์ผูก service ต่อเนื่อง","ระบบยังทำงานต่อได้แม้ communication ขาด",null)}
+    ${subsystem("Grid Operations & Control","ห้องควบคุมไฟฟ้า ดูภาพรวมโครงข่าย จุดไหนไฟตกก็ส่งไฟเสริม","รักษาเสถียรภาพไฟฟ้าทั้งโครงข่ายแบบเรียลไทม์","License + O&M ระยะยาว","ไฟฟ้าเสถียร ปัญหาไฟตกได้รับการแก้ไขเร็ว",null)}
+    ${subsystem("Energy Procurement Platform","ระบบแนะนำวิธีประหยัดพลังงาน","แนะนำวิธีลดใช้พลังงานตามพฤติกรรมลูกค้าแต่ละราย","ต่อยอดเป็น Shared-Savings ได้ในอนาคต","ประหยัดค่าไฟจากคำแนะนำที่ใช้ได้จริง",null)}
+    ${subsystem("Carbon Accounting & Reporting","วัด-ติดตาม-รายงาน carbon footprint เทียบ baseline ก่อน-หลัง","แปลงผลลัพธ์พลังงานเป็นตัวเลข ESG ที่ auditable","ตอบโจทย์ ESG ที่องค์กรใหญ่ต้องมี","มีข้อมูล carbon ใช้รายงานต่อ regulator/นักลงทุน","Carbon Management Fee")}
+    ${subsystem("Monitoring, Reporting & Event Resolution","ระบบติดตามและแก้ปัญหา","เฝ้าระวัง-แก้ไขปัญหาต่อเนื่องตลอดสัญญา","ผูกสัญญาระยะยาว รายได้สม่ำเสมอ","รู้ปัญหาและได้รับการแก้ไขก่อนเสียหายลุกลาม","Long-term Service Agreement")}
+    ${subsystem("Digital / Predictive Maintenance","ระบบซ่อมก่อนพัง","คาดการณ์ความเสียหายล่วงหน้า ลด downtime","Outcome-based ที่ขายง่ายสุดตอนนี้","ลด downtime ไม่ต้องรอเครื่องพังก่อนซ่อม","Predictive Maintenance Fee")}
+  `
+});
+
+// 6. Chapter 3.3
+pages.push({
+  chapter:"3", title:"Foundation (Technology)", nav:"3.3 Foundation", parentLabel:"3. Technology Platform",
+  html:`
+    <div class="kicker">CHAPTER 3 · TECHNOLOGY PLATFORM</div>
+    <h1 class="page-title">3.3 Foundation</h1>
+    <div class="muted-italic">"ฐานรากที่ค้ำทุก Platform"</div>
+    ${subsystem("Cloud / SaaS Infrastructure","โกดังเก็บข้อมูล — โครงสร้างพื้นฐานข้อมูลกลางให้ทุก Platform ใช้ร่วมกัน",null,"ลด CAPEX ด้าน Data Center ของบริษัทเอง เปลี่ยนเป็นต้นทุนผันแปรตามการใช้งาน","เข้าถึงระบบ EMS/SCADA ได้ทุกที่ทุกเวลา ไม่ต้องลงทุนโครงสร้างพื้นฐานเอง",null)}
+    ${subsystem("OT/IT Cyber Security Framework","ป้องกันทุกชั้นระบบ (SCADA, EMS, Cloud, Field Devices) จากภัยไซเบอร์","ให้ทุก Platform ทำงานต่อเนื่อง — เงื่อนไขพื้นฐานของ Zero Downtime","สร้างความน่าเชื่อถือให้ลูกค้า Enterprise กล้าเชื่อมระบบ OT เข้ากับ Cloud เปิดดีลใหญ่","มั่นใจว่าระบบ SCADA/EMS ที่ควบคุมโครงข่ายไฟฟ้าจะไม่ถูกโจมตี",null)}
+    ${subsystem("Embedded AI Capability Layer","AI กลางแทรกในทุก sub-system (ออกแบบ/ควบคุม/ต้นทุน)","ยกระดับทุกจุดสัมผัสของระบบให้ฉลาดขึ้นแบบเป็นเนื้อเดียวกัน","ต่อยอดเป็น Premium Feature/Fee จากข้อมูลที่มีอยู่แล้ว โดยไม่ต้องเพิ่ม Hardware","ได้คำแนะนำเชิงคาดการณ์ล่วงหน้า แทนที่จะรอปัญหาเกิดก่อนค่อยแก้",null)}
+  `
+});
+
+// 7. Chapter 4.1-4.2
+pages.push({
+  chapter:"4", title:"Foundation & Ecosystem", nav:"4.1–4.2 Foundation / Ecosystem & Partner", parentLabel:"4. Commercial & Management Platform",
+  html:`
+    <div class="kicker">CHAPTER 4 · COMMERCIAL & MANAGEMENT PLATFORM</div>
+    <h1 class="page-title">4.1 Foundation &nbsp;·&nbsp; 4.2 Ecosystem & Partner</h1>
+    <h2 class="sec">A) Foundation</h2>
+    <div class="muted-italic">"ฐานรากที่ค้ำทุก Platform"</div>
+    ${subsystem("Cloud / SaaS Infrastructure","โครงสร้างพื้นฐานด้าน Computing/Storage ที่รองรับทุก Platform ทำงานผ่าน Cloud ได้แบบ Scalable","เป็นฐานรากที่ทำให้ทุกบริการดิจิทัลพร้อมใช้งานได้ทุกที่ทุกเวลา ขยายตัวได้ตามการเติบโตของลูกค้า","ลด CAPEX ด้าน Data Center เปลี่ยนเป็นต้นทุนผันแปรตามการใช้งาน","เข้าถึงระบบ EMS/SCADA ได้ทุกที่ทุกเวลา ไม่ต้องลงทุนโครงสร้างพื้นฐานเอง","รวมใน Subscription ของ EMS/SCADA")}
+    ${subsystem("Cyber Security","ป้องกัน ตรวจจับ ตอบสนองภัยคุกคามไซเบอร์ทั้งฝั่ง IT และ OT (SCADA/Substation Automation)","สร้างความมั่นใจว่าโครงสร้างพลังงานสำคัญจะไม่ถูกโจมตี แม้เชื่อมต่อ Cloud และ 3rd-Party Ecosystem","สร้างความน่าเชื่อถือให้ลูกค้า Enterprise กล้าเชื่อมระบบ OT เข้ากับ Cloud เปิดดีลใหญ่ขึ้น","มั่นใจว่าระบบ SCADA/EMS ที่ควบคุม Substation จะไม่ถูกโจมตี","Subscription (Tiered)")}
+
+    <h2 class="sec">B) Ecosystem & Partner</h2>
+    <div class="muted-italic">"เครือข่ายพันธมิตรที่ขยายคุณค่าออกไปนอกองค์กร"</div>
+    ${subsystem("Partner / 3rd-Party App Ecosystem","เครือข่ายพันธมิตรและแอปจากคนอื่น เชื่อมต่อ Solution บุคคลที่สาม (Financing, Insurance, IoT Sensor, Sub Contractor) เข้ากับ Platform","เปิดให้ลูกค้าเข้าถึง Solution ที่ไม่ได้ทำเอง ผ่านช่องทางเดียว","เปิดรายได้ใหม่โดยไม่ต้องลงทุนพัฒนาเอง 100%","เข้าถึง Solution เสริมผ่านช่องทางเดียว","Marketplace Commission")}
+    ${subsystem("Ecosystem & Services","ทีมดูแลและที่ปรึกษา ดูแลความสัมพันธ์กับ Partner และให้บริการเสริมแก่ลูกค้าอย่างต่อเนื่อง","รักษาคุณภาพและความสม่ำเสมอของบริการทั้ง Ecosystem","ขาย Service Retainer ต่อเนื่อง แทนขายของครั้งเดียว","มีที่ปรึกษาคอยดูแลตลอดอายุการใช้งานระบบ","Service Retainer")}
+    ${subsystem("Project Management Business Platform","บริหารจัดการโครงการที่มีผู้เกี่ยวข้องหลายฝ่าย (PRECISE + EPC + Partner + ลูกค้า) ให้ตรง Scope/เวลา/งบ","ทำให้โครงการซับซ้อนหลาย Pillar และหลาย Partner ส่งมอบตรงเวลา","ลดความเสี่ยงโครงการล่าช้า/บานปลายที่กระทบ Margin","โครงการ Substation/Microgrid ขนาดใหญ่ส่งมอบตรงเวลา งบไม่บาน","ไม่มีรายได้ตรง — ป้องกันต้นทุนแฝง")}
+  `
+});
+
+// 8. Chapter 4.3-4.4
+pages.push({
+  chapter:"4", title:"Customer-Facing & Commercial Process", nav:"4.3–4.4 Customer-Facing / Commercial Process", parentLabel:"4. Commercial & Management Platform",
+  html:`
+    <div class="kicker">CHAPTER 4 · COMMERCIAL & MANAGEMENT PLATFORM</div>
+    <h1 class="page-title">4.3 Customer-Facing &nbsp;·&nbsp; 4.4 Commercial Process</h1>
+    <h2 class="sec">C) Customer-Facing Platform</h2>
+    <div class="muted-italic">"หน้าด่านที่ลูกค้าสัมผัสโดยตรง"</div>
+    ${subsystem("Customer Engagement Platform","จัดการลูกค้า, CRM, Customer Loyalty","รู้จักลูกค้าแต่ละรายในทุก Pillar ที่ซื้อ เพื่อดูแลและเสนอสิ่งที่เหมาะสมในจังหวะที่ใช่","ใช้ข้อมูล Loyalty วางแผน Cross-sell ระหว่าง 5 Pillar","ได้รับการดูแลแบบรู้จักตัวตน ไม่ต้องเริ่มติดต่อใหม่ทุกครั้ง","ไม่มีรายได้ตรง — หนุน Share of Wallet")}
+
+    <h2 class="sec">D) Commercial Process (Pre-Sale → Sale)</h2>
+    <div class="muted-italic">"เครื่องยนต์สร้างยอดขาย"</div>
+    ${subsystem("Stakeholder Map","ระบุและวิเคราะห์ผู้มีส่วนได้ส่วนเสียในองค์กรลูกค้า (ผู้ใช้งาน/ผู้อนุมัติงบ/ทีมเทคนิค/ผู้บริหาร)","ทำให้ทีมขายรู้ว่าต้องคุยกับใคร ด้วยเนื้อหาแบบไหน เพื่อปิดดีลเร็วขึ้น","ช่วยทีมขายเข้าใจ Decision-maker ตัวจริง ลด Sales Cycle","มั่นใจว่าทุกฝ่ายที่เกี่ยวข้องได้รับข้อมูลที่ตรงกับบทบาทตน","ไม่มีรายได้ตรง — Sales Enablement Tool")}
+    ${subsystem("Commercial Platform (Quotation / PO Received)","บริหารการเสนอราคาและการสร้างคุณค่าทางธุรกิจ","ทำให้ทุกใบเสนอราคาสื่อสาร Value ที่แท้จริงของสินค้า","ทำให้ Sales Cycle สั้นลง วัด Win-rate ได้ตรงจากข้อมูลจริง","ได้ใบเสนอราคาเร็ว แม่นยำ ไม่ต้องรอนาน","ไม่มีรายได้ตรง — Sales Engine")}
+    ${subsystem("Sale & Operation Planning","วางแผนความสอดคล้องระหว่างแผนขาย แผนผลิต/สต๊อก และกำลังการติดตั้ง","ให้แน่ใจว่าสิ่งที่ทีมขายสัญญากับลูกค้าไว้ สามารถผลิต/จัดหา/ส่งมอบได้จริงตามเวลา","ลดต้นทุนจาก Over/Under Production หรือ Over/Under Stock","ได้รับสินค้าตรงเวลา ไม่มี Backorder นาน","ไม่มีรายได้ตรง — ต้นทุนป้องกัน")}
+    ${subsystem("Pricing Strategy","กำหนดแนวทางการตั้งราคาสินค้า/บริการแต่ละประเภท (Cost-plus / Value-based / Outcome-based)","ตั้งราคาที่สะท้อนคุณค่าจริงที่ลูกค้าได้รับ เปิดทางสู่โมเดล Shared Savings","ตั้งราคาตาม Value ไม่ใช่แค่ต้นทุน+กำไร","ราคาที่ยืดหยุ่นตามงบและ Scope จริง ไม่ใช่ราคาตายตัว","กรอบตัดสินใจ — ไม่มีรายได้ตรง")}
+    ${subsystem("Financing Platform","จัดหาแหล่งเงินทุนให้ลูกค้า","ทำให้ลูกค้าที่อยากอัปเกรดระบบไฟฟ้า/พลังงานไม่ต้องรอสะสมงบ CAPEX ก้อนใหญ่ก่อนตัดสินใจ","เปิดตลาดลูกค้าที่ไม่มีงบ CAPEX ก้อนใหญ่ ได้ค่าคอมมิชชั่นจากการจับคู่ Financing","ลงทุนระบบไฟฟ้า/RE ได้โดยไม่ต้องใช้เงินก้อนของตัวเอง","Financial Commission")}
+    ${subsystem("Digital Commerce Platform","ช่องทางซื้อขายและบริการออนไลน์","ให้ลูกค้าสั่งซื้ออะไหล่และอุปกรณ์มาตรฐานได้เองทันที โดยไม่ต้องรอ Sales ติดต่อกลับ","เก็บค่าธรรมเนียมต่อรายการ Transaction เป็นรายได้ Marginal Cost ต่ำ","สั่งซื้ออะไหล่/อุปกรณ์เสริมเองได้ทันที ไม่ต้องรอ Sales","Transaction Fee")}
+  `
+});
+
+// 9. Chapter 4.5
+pages.push({
+  chapter:"4", title:"Post-Sale Value & Recurring Revenue", nav:"4.5 Post-Sale Value & Recurring Revenue", parentLabel:"4. Commercial & Management Platform",
+  html:`
+    <div class="kicker">CHAPTER 4 · COMMERCIAL & MANAGEMENT PLATFORM</div>
+    <h1 class="page-title">4.5 Post-Sale Value & Recurring Revenue</h1>
+    <div class="muted-italic">"รายได้ต่อเนื่องหลังการขาย"</div>
+    ${subsystem("Asset Lifecycle Management Platform","บริหารสินทรัพย์และบริการตลอดอายุการใช้งาน","ยืดอายุการใช้งานของสินทรัพย์ลูกค้าให้คุ้มค่าที่สุดตลอดวงจรชีวิต ตั้งแต่จัดหาจนถึงปลดระวาง","ผูกสัญญาหลายปี = Revenue Visibility สูง ลดความผันผวนรายได้รายไตรมาส","ยืดอายุสินทรัพย์ วางแผนงบซ่อมบำรุงล่วงหน้าได้แม่นยำ ลด Downtime","Long-term Service Agreement + Predictive Maintenance Fee")}
+    ${subsystem("ESG & Carbon Commercial Platform","รวบรวมและแปลงข้อมูลการใช้พลังงาน/ลดคาร์บอนจาก EMS ให้เป็นรายงานเชิงพาณิชย์","เปลี่ยนข้อมูล Carbon ที่มีอยู่แล้วใน EMS ให้เป็นมูลค่าทางธุรกิจสำหรับลูกค้าที่ต้องรายงาน ESG","เกาะกระแส ESG ที่ลูกค้าองค์กรใหญ่ต้องมี เปิดดีล Enterprise ระดับ Board","ได้หลักฐาน ESG/Carbon Footprint ไปยื่นขอ Green Financing หรือรายงานผู้ถือหุ้น","Carbon Management Fee")}
+    ${subsystem("AI Intelligence","วิเคราะห์ข้อมูลจาก EMS/SCADA เพื่อสร้าง Insight เชิงคาดการณ์ เช่น แนวโน้มความเสียหายของอุปกรณ์","เปลี่ยนข้อมูลดิบจากอุปกรณ์ไฟฟ้าให้เป็นคำแนะนำที่ลงมือทำได้ก่อนปัญหาจะเกิดจริง","ต่อยอดเป็น Premium Feature/Fee จากข้อมูลที่มีอยู่แล้ว โดยไม่ต้องเพิ่ม Hardware","ได้คำแนะนำเชิงคาดการณ์ล่วงหน้า แทนที่จะรอปัญหาเกิดก่อนค่อยแก้","ไม่ขายแยก — หนุน Predictive Maintenance Fee")}
+  `
+});
+
+// 10. Chapter 5
+pages.push({
+  chapter:"5", title:"สรุป Revenue Model ทั้งหมด", nav:"5. สรุป Revenue Model ทั้งหมด",
+  html:`
+    <div class="kicker">CHAPTER 5</div>
+    <h1 class="page-title">สรุป Revenue Model ทั้งหมด</h1>
+    <div class="page-lead">รายได้แบบ Recurring ที่เกิดจาก Sub-system ต่าง ๆ ทั่วทั้ง TCS Platform</div>
+    <ul class="plain">
+      <li><b>Digital Engineering Subscription</b> — จาก Systems Modeling & Requirements</li>
+      <li><b>AI Subscription</b> — จาก AI Engineering Copilot</li>
+      <li><b>Carbon Management Fee</b> — จาก Carbon Accounting & Reporting / ESG & Carbon Commercial Platform</li>
+      <li><b>Long-term Service Agreement</b> — จาก Monitoring/Event Resolution และ Asset Lifecycle Management</li>
+      <li><b>Predictive Maintenance Fee</b> — จาก Digital/Predictive Maintenance และ Asset Lifecycle Management</li>
+      <li><b>Subscription (Tiered)</b> — จาก Cyber Security</li>
+      <li><b>Marketplace Commission</b> — จาก Partner/3rd-Party App Ecosystem</li>
+      <li><b>Service Retainer</b> — จาก Ecosystem & Services</li>
+      <li><b>Financial Commission</b> — จาก Financing Platform</li>
+      <li><b>Transaction Fee</b> — จาก Digital Commerce Platform</li>
+    </ul>
+    <p>Sub-system ส่วนใหญ่ในกลุ่ม Commercial Process (Pre-Sale → Sale) และ Foundation ไม่มีรายได้ตรง แต่ทำหน้าที่เป็น Sales Enablement, Cost Avoidance หรือฐานรากที่ทำให้ Sub-system อื่นสร้างรายได้ต่อเนื่องได้จริง</p>
+  `
+});
+
+// 11. Chapter 6
+pages.push({
+  chapter:"6", title:"วิธีใช้ eBook เล่มนี้", nav:"6. วิธีใช้ eBook เล่มนี้",
+  html:`
+    <div class="kicker">CHAPTER 6</div>
+    <h1 class="page-title">วิธีใช้ eBook เล่มนี้</h1>
+    <div class="page-lead">สำหรับทีมพัฒนา — ก่อนเริ่มออกแบบและพัฒนาโซลูชันใด ๆ</div>
+    <ul class="plain">
+      <li>อ่าน Mission (บทที่ 1) เพื่อเข้าใจเป้าหมายปลายทางร่วมกันก่อนเริ่มงาน</li>
+      <li>ใช้บทที่ 2 เพื่อเห็นภาพว่า Sub-system ที่กำลังพัฒนาอยู่ตรงไหนของภาพรวม Platform</li>
+      <li>ใช้บทที่ 3–4 เป็นเอกสารอ้างอิง Function/Mission ของแต่ละ Sub-system เมื่อออกแบบ Requirement หรือ User Story</li>
+      <li>ใช้บทที่ 5 เพื่อเข้าใจว่า Feature ที่พัฒนาเชื่อมโยงกับ Revenue Model ใด เพื่อจัดลำดับความสำคัญได้ถูกต้อง</li>
+    </ul>
+    <p>เอกสารนี้เป็นฉบับอ้างอิงเชิงกลยุทธ์ ควรอัปเดตให้สอดคล้องกับความคืบหน้าของโครงการจริงเป็นระยะ</p>
+    <p style="margin-top:40px;color:var(--muted);font-size:12.5px;font-style:italic;">PRECISE · 02-584-2367 · info@precise.co.th · www.precise.co.th</p>
+  `
+});
+
+/* ---------------- Build TOC page content now that pages[] exists ---------------- */
+const tocPageIndex = pages.findIndex(p=>p.isToc);
+pages[tocPageIndex].html = `
+  <div class="kicker">สารบัญ</div>
+  <h1 class="page-title">สารบัญ</h1>
+  <div class="toc-page-list">
+    ${pages.filter(p=>!p.tocSkip).map((p,i)=>{
+      const realIndex = pages.indexOf(p);
+      return `<div class="toc-page-item" data-goto="${realIndex}">
+        <span class="toc-page-item-title">${p.nav || p.title}</span>
+        <span class="toc-page-item-num">หน้า ${realIndex+1}</span>
+      </div>`;
+    }).join('')}
+  </div>
+`;
+
+/* ---------------- Sidebar TOC (grouped by chapter) ---------------- */
+const tocEl = document.getElementById('toc');
+const grouped = {};
+const order = [];
+pages.forEach((p, idx)=>{
+  if(p.tocSkip) return;
+  const key = p.parentLabel || p.nav || p.title;
+  const chapNum = p.chapter;
+  const groupKey = p.parentLabel ? p.parentLabel : (chapNum + '|' + (p.nav||p.title));
+  if(!grouped[groupKey]){ grouped[groupKey] = { label: p.parentLabel || p.nav || p.title, chapter: chapNum, items: [] }; order.push(groupKey); }
+  grouped[groupKey].items.push({ idx, label: p.nav || p.title });
+});
+
+order.forEach(key=>{
+  const g = grouped[key];
+  const wrap = document.createElement('div');
+  wrap.className = 'toc-chapter';
+  const isGroup = g.items.length > 1;
+  const labelDiv = document.createElement('div');
+  labelDiv.className = 'toc-chapter-label';
+  labelDiv.innerHTML = `<span class="num">${g.chapter}</span><span>${g.label}</span>`;
+  labelDiv.addEventListener('click', ()=>{
+    if(isGroup){ wrap.classList.toggle('open'); }
+    else { goTo(g.items[0].idx); }
+  });
+  wrap.appendChild(labelDiv);
+  if(isGroup){
+    const sub = document.createElement('div');
+    sub.className = 'toc-sub';
+    g.items.forEach(it=>{
+      const s = document.createElement('div');
+      s.className = 'toc-sub-item';
+      s.textContent = it.label;
+      s.dataset.idx = it.idx;
+      s.addEventListener('click', (e)=>{ e.stopPropagation(); goTo(it.idx); });
+      sub.appendChild(s);
+    });
+    wrap.appendChild(sub);
+  }
+  tocEl.appendChild(wrap);
+});
+// TOC page + Cover manual entries at top
+const coverEntry = document.createElement('div');
+coverEntry.className = 'toc-chapter';
+coverEntry.innerHTML = `<div class="toc-chapter-label" data-idx="0"><span class="num">·</span><span>หน้าปก</span></div>`;
+coverEntry.querySelector('.toc-chapter-label').addEventListener('click', ()=>goTo(0));
+tocEl.insertBefore(coverEntry, tocEl.firstChild);
+
+const tocEntry = document.createElement('div');
+tocEntry.className = 'toc-chapter';
+tocEntry.innerHTML = `<div class="toc-chapter-label" data-idx="${tocPageIndex}"><span class="num">·</span><span>สารบัญ</span></div>`;
+tocEntry.querySelector('.toc-chapter-label').addEventListener('click', ()=>goTo(tocPageIndex));
+tocEl.insertBefore(tocEntry, tocEl.children[1]);
+
+/* ---------------- Rendering & Navigation ---------------- */
+let current = 0;
+const pageEl = document.getElementById('pageEl');
+const pageNumLabel = document.getElementById('pageNumLabel');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+
+function render(dir){
+  const p = pages[current];
+  pageEl.innerHTML = p.html;
+  pageEl.scrollTop = 0;
+  pageNumLabel.textContent = `หน้า ${current+1} / ${pages.length}`;
+  prevBtn.disabled = current === 0;
+  nextBtn.disabled = current === pages.length - 1;
+
+  // sidebar active states
+  document.querySelectorAll('.toc-chapter-label').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.toc-sub-item').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll(`[data-idx="${current}"]`).forEach(el=>el.classList.add('active'));
+  document.querySelectorAll(`.toc-sub-item[data-idx="${current}"]`).forEach(el=>{
+    el.classList.add('active');
+    el.closest('.toc-chapter').classList.add('open');
+  });
+
+  if(dir){
+    pageEl.classList.add(dir === 'next' ? 'leaving-prev' : 'leaving-next');
+    requestAnimationFrame(()=>{
+      pageEl.classList.remove('leaving-prev','leaving-next');
+      pageEl.classList.add('entering');
+      setTimeout(()=>pageEl.classList.remove('entering'), 400);
+    });
+  }
+}
+function goTo(idx){
+  if(idx === current || idx < 0 || idx >= pages.length) return;
+  const dir = idx > current ? 'next' : 'prev';
+  current = idx;
+  render(dir);
+}
+prevBtn.addEventListener('click', ()=>goTo(current-1));
+nextBtn.addEventListener('click', ()=>goTo(current+1));
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'ArrowRight') goTo(current+1);
+  if(e.key === 'ArrowLeft') goTo(current-1);
+});
+pageEl.addEventListener('click', (e)=>{
+  const item = e.target.closest('.toc-page-item');
+  if(item) goTo(parseInt(item.dataset.goto,10));
+});
+
+render();
+</script>
+</body>
+</html>
